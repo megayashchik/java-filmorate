@@ -16,9 +16,9 @@ import java.time.LocalDate;
 @Data
 public class Film {
     private Integer id;
-    @NotNull(message = "Hазвание фильма не может быть null")
     @NotBlank(message = "Hазвание фильма не может быть пустым")
     private String name;
+    @NotNull(message = "Описание фильма не может быть null")
     @Size(max = 200, message = "Максимальная длина описания фильма не должна превышать 200 символов")
     private String description;
     @NotNull(message = "Дата релиза не может быть null")
