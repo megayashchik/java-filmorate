@@ -23,9 +23,7 @@ public class UserController {
     public User create(@Valid @RequestBody User user) {
         log.info("Создание пользователя {}", user.getName());
 
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        checkName(user);
 
         user.setId(getNextId());
         users.put(user.getId(), user);
@@ -41,21 +39,33 @@ public class UserController {
             throw new ValidateException("Id должен быть указан");
         }
 
-        if (users.containsKey(newUser.getId())) {
-            users.put(newUser.getId(), newUser);
-            log.trace("Данные пользователя обновлены {}", newUser.getName());
+        checkName(newUser);
 
-            return newUser;
+        if (!users.containsKey(newUser.getId())) {
+            log.error("Пользователь с id = {} не найден", newUser.getId());
+            throw new NotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
         }
-        log.error("Пользователь " + newUser.getName() + " не найден");
-        throw new NotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
+
+        users.put(newUser.getId(), newUser);
+        log.trace("Данные пользователя обновлены {}", newUser.getName());
+
+        return newUser;
     }
 
     @GetMapping
     public Collection<User> getAllUsers() {
+        log.info("Получение пользователей {}", users.size());
         return users.values();
     }
 
+    private User checkName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            log.warn("Имя не указано, устанавливаем имя на логин {}", user.getLogin());
+            user.setName(user.getLogin());
+        }
+
+        return user;
+    }
 
     private Integer getNextId() {
         int currentMaxId = users.keySet()
