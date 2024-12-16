@@ -1,79 +1,57 @@
 package ru.yandex.practicum.filmorate.controller;
 
-
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidateException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
-import java.util.HashMap;
 
 
+@Slf4j
 @RestController
 @RequestMapping("/users")
-@Slf4j
+@RequiredArgsConstructor
 public class UserController {
-    private HashMap<Integer, User> users = new HashMap<>();
-
+    private final UserService userService;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public User create(@Valid @RequestBody User user) {
-        log.info("Создание пользователя {}", user.getName());
-
-        checkName(user);
-
-        user.setId(getNextId());
-        users.put(user.getId(), user);
-        log.trace("Пользователь создан {}", user.getName());
-
-        return user;
+        return userService.createUser(user);
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User newUser) {
-        if (newUser.getId() == null) {
-            log.error("Не указан id {}", newUser.getName());
-            throw new ValidateException("Id должен быть указан");
-        }
-
-        checkName(newUser);
-
-        if (!users.containsKey(newUser.getId())) {
-            log.error("Пользователь с id = {} не найден", newUser.getId());
-            throw new NotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
-        }
-
-        users.put(newUser.getId(), newUser);
-        log.trace("Данные пользователя обновлены {}", newUser.getName());
-
-        return newUser;
+        return userService.updateUser(newUser);
     }
 
     @GetMapping
     public Collection<User> getAllUsers() {
-        log.info("Получение пользователей {}", users.size());
-        return users.values();
+        return userService.getAllUsers();
     }
 
-    private User checkName(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            log.warn("Имя не указано, устанавливаем имя на логин {}", user.getLogin());
-            user.setName(user.getLogin());
-        }
-
-        return user;
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable("id") Integer userId, @PathVariable("friendId") Integer friendId) {
+        userService.addFriend(userId, friendId);
     }
 
-    private Integer getNextId() {
-        int currentMaxId = users.keySet()
-                .stream()
-                .mapToInt(id -> id)
-                .max()
-                .orElse(0);
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void deleteFriend(@PathVariable("id") Integer userId, @PathVariable("friendId") Integer friendId) {
+        userService.deleteFriend(userId, friendId);
+    }
 
-        return ++currentMaxId;
+    @GetMapping("/{id}/friends")
+    public Collection<User> findUserFriends(@PathVariable("id") Integer userId) {
+        return userService.findUserFriends(userId);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<User> findCommonFriends(@PathVariable("id") Integer userId,
+                                              @PathVariable("otherId") Integer otherId) {
+        return userService.findCommonFriends(userId, otherId);
     }
 }
