@@ -17,6 +17,4 @@ public interface UserStorage {
     Optional<User> findUser(Integer userId);
 
     Collection<User> findAllUsers();
-
-
 }

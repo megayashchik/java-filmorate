@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
+
+    public User findUser(Integer userId) {
+        return userStorage.findUser(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = "
+                + userId + " не найден."));
+    }
 
     public User createUser(User user) {
         log.debug("Добавление пользователя.");
@@ -35,7 +41,7 @@ public class UserService {
         log.debug("Обновление пользователя.");
 
         if (newUser.getId() == null) {
-            throw new NotFoundException("Пользователь с id= " + newUser.getId() + " не найден.");
+            throw new ValidateException("Пользователь с id= " + newUser.getId() + " не найден.");
         }
 
         return userStorage.updateUser(newUser);
@@ -52,10 +58,8 @@ public class UserService {
             throw new ValidateException("Нельзя добавить самого себя в друзья.");
         }
 
-        User user = userStorage.findUser(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = "
-                + userId + " не найден."));
-        User friend = userStorage.findUser(friendId).orElseThrow(() -> new NotFoundException("Пользователь с id = "
-                + friendId + " не найден."));
+        User user = findUser(userId);
+        User friend = findUser(friendId);
 
         if (user.getFriends().contains(friendId)) {
             throw new DuplicateDataException(String.format("%s Пользователь уже является другом %s",
@@ -71,10 +75,8 @@ public class UserService {
     }
 
     public void deleteFriend(Integer userId, Integer friendId) {
-        User user = userStorage.findUser(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = "
-                + userId + " не найден."));
-        User friend = userStorage.findUser(friendId).orElseThrow(() -> new NotFoundException("Пользователь с id = "
-                + friendId + " не найден."));
+        User user = findUser(userId);
+        User friend = findUser(friendId);
 
         log.debug("Удаление {} из списка друзей {}", friend.getName(), user.getName());
 
@@ -90,26 +92,30 @@ public class UserService {
     }
 
     public Collection<User> findUserFriends(Integer userId) {
-        User user = userStorage.findUser(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = "
-                + userId + " не найден."));
+        User user = findUser(userId);
         Set<Integer> userFriends = user.getFriends();
+
+        log.debug("Список друзей {}", user.getName());
 
         if (userFriends.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return userStorage.findAllUsers().stream()
-                .filter(u -> userFriends.contains(u.getId()))
+        return userFriends.stream()
+                .map(userStorage::findUser)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
     }
 
     public Collection<User> findCommonFriends(Integer userId, Integer friendId) {
         log.debug("Получение списка общих друзей.");
 
-        Collection<User> usersFriends = findUserFriends(userId);
-        Collection<User> friendsOfFriends = findUserFriends(friendId);
+        Set<Integer> usersFriends = findUser(userId).getFriends();
+        Set<Integer> friendsOfFriends = findUser(friendId).getFriends();
         usersFriends.retainAll(friendsOfFriends);
 
-        return usersFriends;
+        return usersFriends.stream()
+                .map(id -> findUser(id))
+                .collect(Collectors.toList());
     }
 }
