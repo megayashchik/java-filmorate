@@ -8,11 +8,9 @@ import ru.yandex.practicum.filmorate.exception.ValidateException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -21,7 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final UserService userService;
 
     public Film findFilm(Integer filmId) {
         return filmStorage.findFilm(filmId).orElseThrow(() -> new NotFoundException("Фильм с id = "
@@ -29,33 +27,33 @@ public class FilmService {
     }
 
     public void addLike(Integer filmId, Integer userId) {
-        Optional<User> user = userStorage.findUser(userId);
+        User user = userService.findUser(userId);
         Film film = findFilm(filmId);
 
         if (film.getLikes().contains(userId)) {
-            throw new ValidateException("Пользователь " + user.get().getName() + " уже поставил лайк фильму "
+            throw new ValidateException("Пользователь " + user.getName() + " уже поставил лайк фильму "
                     + film.getName());
         }
 
         film.getLikes().add(userId);
         filmStorage.updateFilm(film);
 
-        log.debug("Фильму " + film.getName() + " пользователь " + user.get().getName() + " поставил лайк.");
+        log.debug("Фильму " + film.getName() + " пользователь " + user.getName() + " поставил лайк.");
     }
 
     public void deleteLike(Integer filmId, Integer userId) {
-        Optional<User> user = userStorage.findUser(userId);
+        User user = userService.findUser(userId);
         Film film = findFilm(filmId);
 
         if (!film.getLikes().contains(userId)) {
-            throw new ValidateException("Пользователь " + user.get().getName() + " не ставил лайк фильму "
+            throw new ValidateException("Пользователь " + user.getName() + " не ставил лайк фильму "
                     + film.getName());
         }
 
         film.getLikes().remove(userId);
         filmStorage.updateFilm(film);
 
-        log.debug("Пользователь " + user.get().getName() + " удалил лайк к фильму " + film.getName());
+        log.debug("Пользователь " + user.getName() + " удалил лайк к фильму " + film.getName());
     }
 
     public Collection<Film> findMostLikedFilms(Integer count) {
