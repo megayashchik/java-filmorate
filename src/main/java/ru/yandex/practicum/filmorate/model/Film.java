@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.model;
 
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -10,10 +9,13 @@ import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.annotation.DateNotBefore;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 
-@EqualsAndHashCode(of = "id")
 @Data
+@EqualsAndHashCode(of = "id")
+
 public class Film {
     private Integer id;
     @NotBlank(message = "Hазвание фильма не может быть пустым")
@@ -27,4 +29,5 @@ public class Film {
     @NotNull(message = "Продолжительность фильма не может быть null")
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
+    private final Set<Integer> likes = new HashSet<>();
 }
