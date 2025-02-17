@@ -2,50 +2,58 @@
 
 **Filmorate** - Spring Boot приложение для поиска и оценки фильмов.
 
+## Содержание
+
+- [ER-диаграмма](#er-диаграмма)
+- [Функционал](#функционал)
+- [Примеры SQL-запросов для модели User](#примеры-sql-запросов-для-модели-user)
+- [Примеры SQL-запросов для модели Film](#примеры-sql-запросов-для-модели-film)
+
 ## ER-диаграмма
 
-[Функционал](#функционал) | [Примеры SQL-запросов для модели User](#примеры-sql-запросов-для-модели-user) |
-[Примеры SQL-запросов для модели Film](#примеры-sql-запросов-для-модели-film)
-
-![Схема базы данных](assets/images/Filmorate_table.png)
+![Схема базы данных](assets/images/filmorate_table.png)
 
 ## Функционал
 
-- **User:** информация о пользователях.
+## Users
 
-- **Friends:** информация о дружбе между пользователями.
+- **users:** информация о пользователях.
 
-- **Status_Of_Friendship:** соединительная таблица, связывающая пользователей с их статусами дружбы.
+- **friendships:** информация о дружбе между пользователями.
 
-- **Film:** данные о фильмах.
+- **friendship_statuses:** соединительная таблица, связывающая пользователей с их статусами дружбы.
 
-- **Rating:** рейтинг фильмов.
+## Films
 
-- **Genre:** жанры фильмов.
+- **films:** данные о фильмах.
 
-- **Film_Genre:** соединительная таблица, связывающая фильмы с жанрами.
+- **ratings:** рейтинг фильмов.
 
-- **Film_User:** соединительная таблица, связывающая пользователей с фильмами.
+- **genres:** жанры фильмов.
 
-- **Likes:** лайки пользователей.
+- **film_genres:** соединительная таблица, связывающая фильмы с жанрами.
+
+- **films_users:** соединительная таблица, связывающая пользователей с фильмами.
+
+- **likes:** лайки пользователей.
 
 
 ## Примеры SQL-запросов для модели User
 
 ### 1. Создание пользователя
 
-```
-INSERT INTO User (email, 
-                  login, 
-                  name, 
-                  birthday)
+```sql
+INSERT INTO users (email, 
+                   login, 
+                   name, 
+                   birthday)
 VALUES (?, ?, ?, ?);
 ```
 
 ### 2. Обновление данных пользователя
 
-```
-UPDATE User 
+```sql
+UPDATE users 
 SET email =  ?, 
     login = ?, 
     name = ?, 
@@ -55,49 +63,49 @@ WHERE user_id = ?;
 
 ### 3. Получение всех пользователей
 
-```
-SELECT * FROM User;
+```sql
+SELECT * FROM users;
 ```
 
 ### 4. Получение пользователя по id
 
-```
+```sql
 SELECT u.*
-FROM User As u
+FROM users As u
 WHERE u.user_id = ?;
 ```
 
 ### 5. Добавление друзей
 
-```
-INSERT INTO Friends (user_id,
-                     friend_id,
-                     status_id)
+```sql
+INSERT INTO friendships (user_id,
+                         friend_id,
+                         status_id)
 VALUES (?, ?, ?);
 ```
 
 ### 6. Удаление друзей
 
-```
-DELETE FROM Friends 
+```sql
+DELETE FROM friendships 
 WHERE user_id = ? AND friend_id = ?;
 ```
 
 ### 7. Получение друзей пользователя
 
-```
+```sql
 SELECT u.*
-FROM User AS u
-JOIN Friends AS f ON u.user_id = f.user_id OR u.user_id = f.friend_id
+FROM users AS u
+JOIN friendships AS f ON u.user_id = f.user_id OR u.user_id = f.friend_id
 WHERE (f.user_id = ? OR f.friend_id = ?) AND u.user_id != ?;
 ```
 
 ### 8. Получение общих друзей
 
-```
-SELECT u.* FROM User AS u
-JOIN Friends f1 ON u.user_id = f1.friend_id
-JOIN Friends f2 ON u.user_id = f2.friend_id
+```sql
+SELECT u.* FROM users AS u
+JOIN friendships f1 ON u.user_id = f1.friend_id
+JOIN friendships f2 ON u.user_id = f2.friend_id
 WHERE f1.user_id = ? AND f2.user_id = ?;
 ```
 
@@ -106,19 +114,19 @@ WHERE f1.user_id = ? AND f2.user_id = ?;
 
 ### 1. Создание фильма
 
-```
-INSERT INTO Film (name, 
-                  description, 
-                  release_date, 
-                  duration,
-                  rating_id)
+```sql
+INSERT INTO films (name, 
+                   description, 
+                   release_date, 
+                   duration,
+                   rating_id)
 VALUES (?, ?, ?, ?, ?);
 ```
 
 ### 2. Обновление фильма
 
-```
-UPDATE Film 
+```sql
+UPDATE films 
 SET name =  ?, 
     description = ?, 
     release_date = ?, 
@@ -129,34 +137,34 @@ WHERE film_id = ?;
 
 ### 3. Получение всех фильмов
 
-```
+```sql
 SELECT f.film_id,
        f.name AS title,
        f.description,
        f.release_date,
        f.duration,
        r.name AS MPA_RATING
-FROM Film AS f
-LEFT JOIN Rating AS r ON f.rating_id = r.rating_id;
+FROM films AS f
+LEFT JOIN ratings AS r ON f.rating_id = r.rating_id;
 ```
 
 ### 4. Добавление лайка
 
-```
-INSERT INTO Likes (film_id, user_id)
+```sql
+INSERT INTO likes (film_id, user_id)
 VALUES (?, ?);
 ```
 
 ### 5. Удаление лайка
 
-```
-DELETE FROM Likes
+```sql
+DELETE FROM likes
 WHERE film_id = ? AND user_id = ?;
 ```
 
 ### 6. Получение самых популярных фильмов
 
-```
+```sql
 SELECT f.film_id, 
        f.name, 
        f.description, 
@@ -164,8 +172,8 @@ SELECT f.film_id,
        f.duration, 
        f.rating_id,
        COUNT(l.user_id) AS like_count
-FROM Film AS f
-LEFT JOIN Likes AS l ON f.film_id = l.film_id
+FROM films AS f
+LEFT JOIN likes AS l ON f.film_id = l.film_id
 GROUP BY f.film_id, 
          f.name, 
          f.description, 
