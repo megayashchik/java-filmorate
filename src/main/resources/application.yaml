@@ -13,5 +13,3 @@ spring:
 
 logging.level:
   ru.practicum.filmorate: DEBUG
-#  ru.practicum.filmorate: ALWAYS
-#  org.zalando.logbook: TRACE
