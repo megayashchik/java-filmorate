@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({FilmDbStorage.class})
-class FilmDbStorageTests {
+class FilmDbStorageTest {
 
     private final FilmDbStorage filmStorage;
     private final JdbcTemplate jdbcTemplate;

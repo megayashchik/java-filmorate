@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({GenreDbStorage.class})
 @Transactional
-class GenreDbStorageIntegrationTests {
+class GenreDbStorageTest {
 
     private final GenreDbStorage genreStorage;
 
