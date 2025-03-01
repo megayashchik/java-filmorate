@@ -11,7 +11,7 @@
 
 ## ER-диаграмма
 
-![Схема базы данных](assets/images/filmorate_table.png)
+![Схема базы данных](assets/images/filmorate_diagram.png)
 
 ## Функционал
 
