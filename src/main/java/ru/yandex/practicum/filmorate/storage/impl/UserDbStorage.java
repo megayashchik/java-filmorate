@@ -18,7 +18,7 @@ public class UserDbStorage extends BaseStorage<User> implements UserStorage {
 
     @Autowired
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
-        super(jdbcTemplate, UserDbStorage::mapRowToUser, User.class);
+        super(jdbcTemplate, UserDbStorage::mapRowToUser);
     }
 
     private static User mapRowToUser(ResultSet rs, int rowNum) throws SQLException {

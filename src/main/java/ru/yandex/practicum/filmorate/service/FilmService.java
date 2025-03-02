@@ -6,20 +6,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.mapper.GenreMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.FilmGenre;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.storage.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.interfaces.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.interfaces.RatingStorage;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -154,20 +153,56 @@ public class FilmService {
     public FilmDto getFilmById(Integer filmId) {
         Film film = filmStorage.findFilmById(filmId)
                 .orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден"));
+        Map<Integer, List<GenreDto>> genresMap = getFilmGenres(Collections.singletonList(film));
         List<Genre> genres = genreStorage.findGenresByFilmId(filmId);
 
-        return FilmMapper.toDto(film, genres.stream()
-                .map(GenreMapper::toDto)
-                .collect(Collectors.toList()));
+        return FilmMapper.toDto(film, genresMap.getOrDefault(filmId, Collections.emptyList()));
+
+    }
+
+    private Map<Integer, List<GenreDto>> getFilmGenres(Collection<Film> films) {
+        if (films == null || films.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Integer> filmsIds = films.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList());
+
+        List<FilmGenre> filmGenres = genreStorage.findFilmGenresByFilmIds(filmsIds);
+
+        return filmGenres.stream()
+                .collect(Collectors.groupingBy(
+                        FilmGenre::getFilmId,
+                        Collectors.mapping(
+                                fg -> GenreMapper.toDto(fg.getGenre()),
+                                Collectors.toList()
+                        )
+                ));
     }
 
     public Collection<FilmDto> getAllFilms() {
-        return filmStorage.findAllFilms().stream()
-                .map(film -> FilmMapper.toDto(film, genreStorage.findGenresByFilmId(film.getId()).stream()
-                        .map(GenreMapper::toDto)
-                        .collect(Collectors.toList())))
+        Collection<Film> films = filmStorage.findAllFilms();
+        Map<Integer, List<Genre>> filmGenresMap = genreStorage.findAllFilmGenres()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        FilmGenre::getFilmId,
+                        Collectors.mapping(
+                                FilmGenre::getGenre,
+                                Collectors.toList()
+                        )
+                ));
+
+        return films.stream()
+                .map(film -> FilmMapper.toDto(
+                        film,
+                        filmGenresMap.getOrDefault(film.getId(), Collections.emptyList())
+                                .stream()
+                                .map(GenreMapper::toDto)
+                                .collect(Collectors.toList())
+                ))
                 .collect(Collectors.toList());
     }
+
 
     public void addLike(Integer filmId, Integer userId) {
         filmStorage.addLike(filmId, userId);
@@ -178,10 +213,11 @@ public class FilmService {
     }
 
     public List<FilmDto> getMostLikedFilms(int limit) {
-        return filmStorage.findMostLikedFilms(limit).stream()
-                .map(film -> FilmMapper.toDto(film, genreStorage.findGenresByFilmId(film.getId()).stream()
-                        .map(GenreMapper::toDto)
-                        .collect(Collectors.toList())))
+        List<Film> films = filmStorage.findMostLikedFilms(limit);
+        Map<Integer, List<GenreDto>> genresMap = getFilmGenres(films);
+
+        return films.stream()
+                .map(film -> FilmMapper.toDto(film, genresMap.getOrDefault(film.getId(), Collections.emptyList())))
                 .collect(Collectors.toList());
     }
 }

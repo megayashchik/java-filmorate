@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.storage.BaseStorage;
 import ru.yandex.practicum.filmorate.storage.interfaces.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.interfaces.GenreStorage;
-import ru.yandex.practicum.filmorate.storage.interfaces.RatingStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,13 +20,11 @@ import java.util.stream.Collectors;
 public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
 
     private final GenreStorage genreStorage;
-    private final RatingStorage ratingStorage;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage, RatingStorage ratingStorage) {
-        super(jdbcTemplate, FilmDbStorage::mapRowToFilm, Film.class);
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
+        super(jdbcTemplate, FilmDbStorage::mapRowToFilm);
         this.genreStorage = genreStorage;
-        this.ratingStorage = ratingStorage;
     }
 
     private static Film mapRowToFilm(ResultSet rs, int rowNum) throws SQLException {

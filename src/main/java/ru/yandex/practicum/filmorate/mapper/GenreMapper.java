@@ -13,10 +13,6 @@ public class GenreMapper {
     }
 
     public static Genre toEntity(GenreDto dto) {
-        Genre genre = new Genre();
-        genre.setId(dto.getId());
-        genre.setName(dto.getName());
-
-        return genre;
+        return new Genre(dto.getId(), dto.getName());
     }
 }

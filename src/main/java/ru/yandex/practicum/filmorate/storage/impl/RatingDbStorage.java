@@ -21,7 +21,7 @@ public class RatingDbStorage extends BaseStorage<Rating> implements RatingStorag
             rating.setName(rs.getString("name"));
 
             return rating;
-        }, Rating.class);
+        });
     }
 
     @Override

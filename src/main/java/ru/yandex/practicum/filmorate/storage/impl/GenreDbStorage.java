@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.model.FilmGenre;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.BaseStorage;
 import ru.yandex.practicum.filmorate.storage.interfaces.GenreStorage;
@@ -16,13 +17,10 @@ public class GenreDbStorage extends BaseStorage<Genre> implements GenreStorage {
 
     @Autowired
     public GenreDbStorage(JdbcTemplate jdbcTemplate) {
-        super(jdbcTemplate, (rs, rowNum) -> {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("genre_id"));
-            genre.setName(rs.getString("name"));
-
-            return genre;
-        }, Genre.class);
+        super(jdbcTemplate, (rs, rowNum) -> new Genre(
+                rs.getInt("genre_id"),
+                rs.getString("name")
+        ));
     }
 
     @Override
@@ -41,7 +39,8 @@ public class GenreDbStorage extends BaseStorage<Genre> implements GenreStorage {
 
     @Override
     public List<Genre> findGenresByFilmId(Integer filmId) {
-        String sql = "SELECT g.* FROM genres g JOIN film_genres fg ON g.genre_id = fg.genre_id WHERE fg.film_id = ?";
+        String sql = "SELECT g.* FROM genres g " +
+                "JOIN film_genres fg ON g.genre_id = fg.genre_id WHERE fg.film_id = ?";
 
         return findMany(sql, filmId);
     }
@@ -53,13 +52,40 @@ public class GenreDbStorage extends BaseStorage<Genre> implements GenreStorage {
         }
         String sql = "SELECT * FROM genres WHERE genre_id IN (" +
                 String.join(",", Collections.nCopies(ids.size(), "?")) + ")";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("genre_id"));
-            genre.setName(rs.getString("name"));
 
-            return genre;
-        }, ids.toArray());
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new Genre(
+                rs.getInt("genre_id"),
+                rs.getString("name")
+        ), ids.toArray());
+    }
+
+    @Override
+    public List<FilmGenre> findAllFilmGenres() {
+        String sql = "SELECT fg.film_id, g.genre_id, g.name " +
+                "FROM film_genres fg " +
+                "JOIN genres g ON fg.genre_id = g.genre_id";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new FilmGenre(
+                rs.getInt("film_id"),
+                new Genre(rs.getInt("genre_id"), rs.getString("name"))
+        ));
+    }
+
+    @Override
+    public List<FilmGenre> findFilmGenresByFilmIds(List<Integer> filmIds) {
+        if (filmIds == null || filmIds.isEmpty()) {
+
+            return Collections.emptyList();
+        }
+        String sql = "SELECT fg.film_id, g.genre_id, g.name " +
+                "FROM film_genres fg " +
+                "JOIN genres g ON fg.genre_id = g.genre_id " +
+                "WHERE fg.film_id IN (" + String.join(",", Collections.nCopies(filmIds.size(), "?")) + ")";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new FilmGenre(
+                rs.getInt("film_id"),
+                new Genre(rs.getInt("genre_id"), rs.getString("name"))
+        ), filmIds.toArray());
     }
 }
 

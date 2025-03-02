@@ -18,7 +18,6 @@ import java.util.Optional;
 public abstract class BaseStorage<T> {
     protected final JdbcTemplate jdbcTemplate;
     private final RowMapper<T> mapper;
-    private final Class<T> entityType;
 
     protected Optional<T> findOne(String query, Object... params) {
         try {
