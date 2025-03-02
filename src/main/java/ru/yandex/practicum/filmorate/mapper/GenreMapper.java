@@ -8,6 +8,7 @@ public class GenreMapper {
         GenreDto dto = new GenreDto();
         dto.setId(genre.getId());
         dto.setName(genre.getName());
+
         return dto;
     }
 
@@ -15,6 +16,7 @@ public class GenreMapper {
         Genre genre = new Genre();
         genre.setId(dto.getId());
         genre.setName(dto.getName());
+
         return genre;
     }
 }

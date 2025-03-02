@@ -9,5 +9,6 @@ import lombok.Data;
 public class UserFriendDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer id;
+
     private String name;
 }

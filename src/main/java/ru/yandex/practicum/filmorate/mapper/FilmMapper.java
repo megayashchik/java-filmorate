@@ -5,41 +5,45 @@ import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FilmMapper {
-    public static FilmDto toDto(Film film, List<GenreDto> genres) {
-        FilmDto dto = new FilmDto();
-        dto.setId(film.getId());
-        dto.setName(film.getName());
-        dto.setDescription(film.getDescription());
-        dto.setReleaseDate(film.getReleaseDate());
-        dto.setDuration(film.getDuration());
-
-        if (film.getMpa() != null) {
-            dto.setMpa(RatingMapper.toDto(film.getMpa()));
-        }
-
-        dto.setGenres(genres);
-        dto.setLikes(film.getLikes());
-
-        return dto;
-    }
-
-    public static Film toEntity(FilmDto dto) {
+    public static Film toEntity(FilmDto filmDto) {
         Film film = new Film();
-        film.setId(dto.getId());
-        film.setName(dto.getName());
-        film.setDescription(dto.getDescription());
-        film.setReleaseDate(dto.getReleaseDate());
-        film.setDuration(dto.getDuration());
+        film.setId(filmDto.getId());
+        film.setName(filmDto.getName());
+        film.setDescription(filmDto.getDescription());
+        film.setReleaseDate(filmDto.getReleaseDate());
+        film.setDuration(filmDto.getDuration());
 
-        if (dto.getMpa() != null) {
-            film.setMpa(RatingMapper.toEntity(dto.getMpa()));
+        if (filmDto.getMpa() != null) {
+            film.setMpa(RatingMapper.toEntity(filmDto.getMpa()));
         }
 
-        film.getLikes().addAll(dto.getLikes());
+        if (filmDto.getGenres() != null) {
+            film.setGenres(filmDto.getGenres().stream()
+                    .map(GenreMapper::toEntity)
+                    .collect(Collectors.toList()));
+        }
 
         return film;
     }
-}
 
+    public static FilmDto toDto(Film film, List<GenreDto> genreDtos) {
+        FilmDto filmDto = new FilmDto();
+        filmDto.setId(film.getId());
+        filmDto.setName(film.getName());
+        filmDto.setDescription(film.getDescription());
+        filmDto.setReleaseDate(film.getReleaseDate());
+        filmDto.setDuration(film.getDuration());
+
+        if (film.getMpa() != null) {
+            filmDto.setMpa(RatingMapper.toDto(film.getMpa()));
+        }
+
+        filmDto.setGenres(genreDtos);
+        filmDto.setLikes(film.getLikes());
+
+        return filmDto;
+    }
+}

@@ -15,7 +15,6 @@ import java.util.Set;
 
 @Data
 public class FilmDto {
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer id;
 
     @NotBlank(message = "Название фильма не может быть пустым")
@@ -33,7 +32,6 @@ public class FilmDto {
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
 
-    @NotNull(message = "Рейтинг MPA не может быть null")
     private RatingDto mpa;
 
     private List<GenreDto> genres;

@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface UserStorage {
-
     User createUser(User user);
 
     User updateUser(User user);
@@ -22,7 +21,7 @@ public interface UserStorage {
 
     void confirmFriend(Integer userId, Integer friendId);
 
-    void deleteFriend(Integer userId, Integer friendId);
+    boolean deleteFriend(Integer userId, Integer friendId);
 
     Collection<User> findUserFriends(Integer userId);
 

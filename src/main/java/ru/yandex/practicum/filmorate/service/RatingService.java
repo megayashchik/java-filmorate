@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.RatingDto;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.RatingMapper;
 import ru.yandex.practicum.filmorate.storage.interfaces.RatingStorage;
 
@@ -21,7 +22,7 @@ public class RatingService {
     public RatingDto getRatingById(Integer id) {
         return ratingStorage.getById(id)
                 .map(RatingMapper::toDto)
-                .orElseThrow(() -> new RuntimeException("Рейтинг не найден"));
+                .orElseThrow(() -> new NotFoundException("Рейтинг с id=" + id + " не найден"));
     }
 
     public List<RatingDto> getAllRatings() {

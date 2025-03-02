@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,11 +7,15 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.storage.impl.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.impl.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.impl.RatingDbStorage;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import({FilmDbStorage.class})
+@Import({FilmDbStorage.class, GenreDbStorage.class, RatingDbStorage.class})
+@Sql(scripts = {"classpath:schema.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class FilmDbStorageTest {
 
     private final FilmDbStorage filmStorage;
@@ -30,32 +33,53 @@ class FilmDbStorageTest {
     private Film testFilm1;
     private Film testFilm2;
 
+    @Autowired
+    public FilmDbStorageTest(FilmDbStorage filmStorage, JdbcTemplate jdbcTemplate) {
+        this.filmStorage = filmStorage;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("DELETE FROM likes");
-        jdbcTemplate.execute("DELETE FROM film_genres");
-        jdbcTemplate.execute("DELETE FROM films");
-        jdbcTemplate.execute("DELETE FROM users");
-        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN film_id RESTART WITH 1");
-        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
+        try {
+            jdbcTemplate.execute("DELETE FROM likes");
+            jdbcTemplate.execute("DELETE FROM film_genres");
+            jdbcTemplate.execute("DELETE FROM films");
+            jdbcTemplate.execute("DELETE FROM users");
+            jdbcTemplate.execute("DELETE FROM ratings");
+            jdbcTemplate.execute("DELETE FROM genres");
+            jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN film_id RESTART WITH 1");
+            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
+            jdbcTemplate.execute("ALTER TABLE ratings ALTER COLUMN rating_id RESTART WITH 1");
+            jdbcTemplate.execute("ALTER TABLE genres ALTER COLUMN genre_id RESTART WITH 1");
 
-        jdbcTemplate.update("INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
-                "user1@example.com", "login1", "User1", LocalDate.of(2000, 10, 11));
-        jdbcTemplate.update("INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
-                "user2@example.com", "login2", "User2", LocalDate.of(1980, 8, 20));
+            jdbcTemplate.update("INSERT INTO ratings (name) VALUES ('G'), ('PG'), ('PG-13'), ('R'), ('NC-17')");
+            jdbcTemplate.update("INSERT INTO genres (name) " +
+                    "VALUES ('Комедия'), ('Драма'), ('Мультфильм'), ('Триллер'), ('Документальный'), ('Боевик')");
 
-        testFilm1 = createTestFilm("Film 1", "Description 1",
-                LocalDate.of(2005, 7, 8), 120, 1); // G
-        testFilm2 = createTestFilm("Film 2", "Description 2",
-                LocalDate.of(1960, 11, 2), 150, 2); // PG
+            jdbcTemplate.update("INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
+                    "user1@example.com", "login1", "User1", LocalDate.of(2000, 10, 11));
+            jdbcTemplate.update("INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
+                    "user2@example.com", "login2", "User2", LocalDate.of(1980, 8, 20));
 
-        filmStorage.addGenreId(1, 1); // Комедия
-        filmStorage.addGenreId(1, 2); // Драма
-        filmStorage.addGenreId(2, 3); // Мультфильм
+            testFilm1 = createTestFilm("Film 1", "Description 1",
+                    LocalDate.of(2005, 7, 8), 120, 1); // G
+            testFilm2 = createTestFilm("Film 2", "Description 2",
+                    LocalDate.of(1960, 11, 2), 150, 2); // PG
 
-        filmStorage.addLike(1, 1);
-        filmStorage.addLike(1, 2);
-        filmStorage.addLike(2, 1);
+            filmStorage.addGenreId(1, 1); // Комедия
+            filmStorage.addGenreId(1, 2); // Драма
+            filmStorage.addGenreId(2, 3); // Мультфильм
+
+            filmStorage.addLike(1, 1);
+            filmStorage.addLike(1, 2);
+            filmStorage.addLike(2, 1);
+
+        } catch (Exception e) {
+            System.err.println("Error in setUp: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     private Film createTestFilm(String name, String description, LocalDate releaseDate, int duration, int ratingId) {
@@ -67,7 +91,8 @@ class FilmDbStorageTest {
         Rating rating = new Rating();
         rating.setId(ratingId);
         film.setMpa(rating);
-        return filmStorage.createFilm(film);
+        Film createdFilm = filmStorage.createFilm(film);
+        return createdFilm;
     }
 
     @Test
@@ -84,7 +109,7 @@ class FilmDbStorageTest {
 
     @Test
     void testFindAllFilms() {
-        List<Film> films = (List<Film>) filmStorage.findAllFilms();
+        Collection<Film> films = filmStorage.findAllFilms();
 
         assertThat(films).hasSize(2)
                 .anySatisfy(film -> assertThat(film).hasFieldOrPropertyWithValue("id", 1))
@@ -207,7 +232,6 @@ class FilmDbStorageTest {
         assertThat(genreIds).hasSize(2).contains(1, 2);
     }
 }
-
 
 
 

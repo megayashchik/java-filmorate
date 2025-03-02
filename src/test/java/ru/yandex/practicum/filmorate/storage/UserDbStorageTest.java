@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.dto.UserFriendDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.impl.UserDbStorage;
@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import({UserDbStorage.class})
+@Import(UserDbStorage.class)
+@Sql(scripts = {"classpath:schema.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class UserDbStorageTest {
 
     private final UserDbStorage userDbStorage;
@@ -30,14 +30,29 @@ class UserDbStorageTest {
     private User testUser1;
     private User testUser2;
 
+    @Autowired
+    public UserDbStorageTest(UserDbStorage userDbStorage, JdbcTemplate jdbcTemplate) {
+        this.userDbStorage = userDbStorage;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     @BeforeEach
     void setUp() {
         jdbcTemplate.execute("DELETE FROM friendship");
         jdbcTemplate.execute("DELETE FROM users");
+        jdbcTemplate.execute("DELETE FROM friendship_statuses");
         jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
+        jdbcTemplate.execute("ALTER TABLE friendship_statuses ALTER COLUMN status_id RESTART WITH 1");
+
+        jdbcTemplate.update("INSERT INTO friendship_statuses (name) " +
+                "VALUES ('Подтверждённая'), ('Неподтверждённая')");
 
         testUser1 = createTestUser("user1@example.com", "login1");
         testUser2 = createTestUser("user2@example.com", "login2");
+
+        Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
+        Integer statusCount = jdbcTemplate.queryForObject("SELECT COUNT(*)" +
+                " FROM friendship_statuses", Integer.class);
     }
 
     private User createTestUser(String email, String login) {
@@ -92,7 +107,7 @@ class UserDbStorageTest {
                 1, 2
         );
 
-        assertThat(statusId).isEqualTo(2);
+        assertThat(statusId).isEqualTo(1);
     }
 
     @Test
@@ -126,7 +141,6 @@ class UserDbStorageTest {
     @Test
     void should_find_User_Friends() {
         userDbStorage.addFriend(1, 2);
-        userDbStorage.confirmFriend(2, 1);
 
         Collection<User> friends = userDbStorage.findUserFriends(1);
 
@@ -138,7 +152,7 @@ class UserDbStorageTest {
     @Test
     void should_check_is_Friend() {
         userDbStorage.addFriend(1, 2);
-        assertThat(userDbStorage.isFriend(1, 2)).isFalse();
+        assertThat(userDbStorage.isFriend(1, 2)).isTrue();
 
         userDbStorage.confirmFriend(2, 1);
         assertThat(userDbStorage.isFriend(1, 2)).isTrue();
@@ -148,9 +162,9 @@ class UserDbStorageTest {
     void should_find_User_Friends_By_Status() {
         userDbStorage.addFriend(1, 2);
 
-        Collection<UserFriendDto> unconfirmedFriendRequests = userDbStorage.findUserFriendsByStatus(1, 2);
+        Collection<UserFriendDto> confirmedFriendRequests = userDbStorage.findUserFriendsByStatus(1, 1);
 
-        assertThat(unconfirmedFriendRequests)
+        assertThat(confirmedFriendRequests)
                 .extracting(UserFriendDto::getId)
                 .containsExactly(2);
     }

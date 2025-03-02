@@ -16,8 +16,6 @@ import java.util.Optional;
 @Repository
 public class UserDbStorage extends BaseStorage<User> implements UserStorage {
 
-    private UserStorage userStorage;
-
     @Autowired
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate, UserDbStorage::mapRowToUser, User.class);
@@ -74,13 +72,8 @@ public class UserDbStorage extends BaseStorage<User> implements UserStorage {
 
     @Override
     public void addFriend(Integer userId, Integer friendId) {
-        String sqlCheck = "SELECT EXISTS(SELECT 1 FROM friendship WHERE user_id = ? AND friend_id = ?)";
-        boolean exists = jdbcTemplate.queryForObject(sqlCheck, Boolean.class, userId, friendId);
-
-        if (!exists) {
-            String insert = "INSERT INTO friendship (user_id, friend_id, status_id) VALUES (?, ?, 2)";
-            jdbcTemplate.update(insert, userId, friendId);
-        }
+        String sqlQuery = "INSERT INTO friendship (user_id, friend_id, status_id) VALUES (?, ?, 1)";
+        jdbcTemplate.update(sqlQuery, userId, friendId);
     }
 
     @Override
@@ -90,9 +83,11 @@ public class UserDbStorage extends BaseStorage<User> implements UserStorage {
     }
 
     @Override
-    public void deleteFriend(Integer userId, Integer friendId) {
+    public boolean deleteFriend(Integer userId, Integer friendId) {
         String sql = "DELETE FROM friendship WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sql, userId, friendId);
+        int rowsAffected = jdbcTemplate.update(sql, userId, friendId);
+
+        return rowsAffected > 0;
     }
 
     @Override

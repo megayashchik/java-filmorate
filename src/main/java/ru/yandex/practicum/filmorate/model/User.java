@@ -16,10 +16,10 @@ public class User {
     @NotBlank(message = "Email не может быть пустым")
     @Email(message = "Адрес электронной почты должен быть в формате user@domain.ru")
     private String email;
+
     @NotBlank
     @Pattern(regexp = "^[^\\s]+$", message = "Логин не может быть пустым и содержать пробелы")
     private String login;
-
     private String name;
 
     @NotNull(message = "Дата рождения не может быть null")

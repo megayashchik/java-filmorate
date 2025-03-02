@@ -34,7 +34,6 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
 
-    @NotNull(message = "Рейтинг MPA не может быть null")
     private Rating mpa;
 
     private List<Genre> genres = new ArrayList<>();

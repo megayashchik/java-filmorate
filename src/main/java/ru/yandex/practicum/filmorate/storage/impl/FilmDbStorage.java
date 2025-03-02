@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.storage.BaseStorage;
 import ru.yandex.practicum.filmorate.storage.interfaces.FilmStorage;
@@ -16,17 +15,19 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
 
-    private GenreStorage genreStorage;
-    private RatingStorage ratingStorage;
-    private FilmStorage filmStorage;
+    private final GenreStorage genreStorage;
+    private final RatingStorage ratingStorage;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage, RatingStorage ratingStorage) {
         super(jdbcTemplate, FilmDbStorage::mapRowToFilm, Film.class);
+        this.genreStorage = genreStorage;
+        this.ratingStorage = ratingStorage;
     }
 
     private static Film mapRowToFilm(ResultSet rs, int rowNum) throws SQLException {
@@ -40,6 +41,7 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
         rating.setId(rs.getInt("rating_id"));
         rating.setName(rs.getString("rating_name"));
         film.setMpa(rating);
+
         return film;
     }
 
@@ -52,13 +54,15 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
                 film.getDescription(),
                 film.getReleaseDate(),
                 film.getDuration(),
-                film.getMpa().getId());
+                film.getMpa() != null ? film.getMpa().getId() : null);
         film.setId(id);
 
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            for (Genre genre : film.getGenres()) {
-                addGenreId(id, genre.getId());
-            }
+            String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+            jdbcTemplate.batchUpdate(genreSql, film.getGenres().stream()
+                    .filter(genre -> genre != null && genre.getId() != null)
+                    .map(genre -> new Object[]{id, genre.getId()})
+                    .collect(Collectors.toList()));
         }
 
         return film;
@@ -73,15 +77,17 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
                 film.getDescription(),
                 film.getReleaseDate(),
                 film.getDuration(),
-                film.getMpa().getId(),
+                film.getMpa() != null ? film.getMpa().getId() : null,
                 film.getId());
 
         deleteGenresByFilmId(film.getId());
 
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            for (Genre genre : film.getGenres()) {
-                addGenreId(film.getId(), genre.getId());
-            }
+            String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+            jdbcTemplate.batchUpdate(genreSql, film.getGenres().stream()
+                    .filter(genre -> genre != null && genre.getId() != null)
+                    .map(genre -> new Object[]{film.getId(), genre.getId()})
+                    .collect(Collectors.toList()));
         }
 
         return film;
@@ -100,7 +106,7 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
                 "FROM films f LEFT JOIN ratings r ON f.rating_id = r.rating_id " +
                 "WHERE f.film_id = ?";
         Optional<Film> film = findOne(sqlQuery, filmId);
-        film.ifPresent(f -> f.setGenres(findGenresByFilmId(filmId)));
+        film.ifPresent(f -> f.setGenres(genreStorage.findGenresByFilmId(filmId)));
 
         return film;
     }
@@ -110,7 +116,7 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
         String sqlQuery = "SELECT f.*, r.name AS rating_name " +
                 "FROM films f LEFT JOIN ratings r ON f.rating_id = r.rating_id";
         Collection<Film> films = findMany(sqlQuery);
-        films.forEach(film -> film.setGenres(findGenresByFilmId(film.getId())));
+        films.forEach(film -> film.setGenres(genreStorage.findGenresByFilmId(film.getId())));
 
         return films;
     }
@@ -130,8 +136,7 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
 
     @Override
     public List<Film> findMostLikedFilms(int limit) {
-        String sqlQuery = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.rating_id, " +
-                "r.name AS rating_name, COUNT(l.user_id) AS like_count " +
+        String sqlQuery = "SELECT f.*, r.name AS rating_name, COUNT(l.user_id) AS like_count " +
                 "FROM films f " +
                 "LEFT JOIN likes l ON f.film_id = l.film_id " +
                 "LEFT JOIN ratings r ON f.rating_id = r.rating_id " +
@@ -139,7 +144,7 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
                 "ORDER BY like_count DESC " +
                 "LIMIT ?";
         List<Film> films = jdbcTemplate.query(sqlQuery, FilmDbStorage::mapRowToFilm, limit);
-        films.forEach(film -> film.setGenres(findGenresByFilmId(film.getId())));
+        films.forEach(film -> film.setGenres(genreStorage.findGenresByFilmId(film.getId())));
 
         return films;
     }
@@ -153,8 +158,10 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
 
     @Override
     public void addGenreId(Integer filmId, Integer genreId) {
-        String sqlQuery = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-        jdbcTemplate.update(sqlQuery, filmId, genreId);
+        if (genreId != null) {
+            String sqlQuery = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+            jdbcTemplate.update(sqlQuery, filmId, genreId);
+        }
     }
 
     @Override
@@ -176,24 +183,7 @@ public class FilmDbStorage extends BaseStorage<Film> implements FilmStorage {
 
         return jdbcTemplate.queryForList(sqlQuery, Integer.class, filmId);
     }
-
-    private List<Genre> findGenresByFilmId(Integer filmId) {
-        String sqlQuery = "SELECT g.genre_id, g.name " +
-                "FROM film_genres fg " +
-                "JOIN genres g ON fg.genre_id = g.genre_id " +
-                "WHERE fg.film_id = ?";
-        return jdbcTemplate.query(sqlQuery, (rs, rowNum) -> {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("genre_id"));
-            genre.setName(rs.getString("name"));
-            return genre;
-        }, filmId);
-    }
 }
-
-
-
-
 
 
 

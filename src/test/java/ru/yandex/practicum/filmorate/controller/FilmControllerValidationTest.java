@@ -269,9 +269,7 @@ public class FilmControllerValidationTest {
 
         Set<ConstraintViolation<FilmDto>> violations = validator.validate(filmDto);
 
-        assertEquals(1, violations.size());
-        assertFalse(violations.isEmpty(), "Рейтинг MPA не может быть null");
-        assertTrue(violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("mpa")));
+        assertEquals(0, violations.size());
+        assertTrue(violations.isEmpty(), "Рейтинг MPA может быть null");
     }
 }

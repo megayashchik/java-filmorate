@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -24,6 +25,7 @@ public abstract class BaseStorage<T> {
             T result = jdbcTemplate.queryForObject(query, mapper, params);
             return Optional.ofNullable(result);
         } catch (EmptyResultDataAccessException ignored) {
+
             return Optional.empty();
         }
     }
@@ -49,10 +51,12 @@ public abstract class BaseStorage<T> {
         try {
             int rowsUpdated = jdbcTemplate.update(query, params);
             if (rowsUpdated == 0) {
-                throw new RuntimeException("Запись для обновления не найдена");
+                throw new NotFoundException("Запись для обновления не найдена");
             }
+        } catch (NotFoundException e) {
+            throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Ошибка при обновлении данных " + e.getMessage(), e);
+            throw new RuntimeException("Ошибка при обновлении данных: " + e.getMessage(), e);
         }
     }
 
@@ -63,11 +67,13 @@ public abstract class BaseStorage<T> {
             for (int idx = 0; idx < params.length; idx++) {
                 ps.setObject(idx + 1, params[idx]);
             }
+
             return ps;
         }, keyHolder);
 
         Integer id = keyHolder.getKeyAs(Integer.class);
         if (id != null) {
+
             return id.intValue();
         } else {
             throw new InternalServerException("Не удалось сохранить данные");

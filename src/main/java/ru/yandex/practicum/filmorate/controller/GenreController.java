@@ -24,12 +24,14 @@ public class GenreController {
     @GetMapping
     public ResponseEntity<List<GenreDto>> getAllGenres() {
         List<GenreDto> genres = genreService.getAllGenres();
+
         return ResponseEntity.ok(genres);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<GenreDto> getGenreById(@PathVariable Integer id) {
         GenreDto genreDto = genreService.getGenreById(id);
+
         return ResponseEntity.ok(genreDto);
     }
 }

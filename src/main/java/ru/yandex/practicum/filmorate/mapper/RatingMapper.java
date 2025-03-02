@@ -8,6 +8,7 @@ public class RatingMapper {
         RatingDto dto = new RatingDto();
         dto.setId(rating.getId());
         dto.setName(rating.getName());
+
         return dto;
     }
 
@@ -15,6 +16,7 @@ public class RatingMapper {
         Rating rating = new Rating();
         rating.setId(dto.getId());
         rating.setName(dto.getName());
+
         return rating;
     }
 }

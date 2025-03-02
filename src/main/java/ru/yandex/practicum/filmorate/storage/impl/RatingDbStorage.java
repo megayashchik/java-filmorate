@@ -19,22 +19,23 @@ public class RatingDbStorage extends BaseStorage<Rating> implements RatingStorag
             Rating rating = new Rating();
             rating.setId(rs.getInt("rating_id"));
             rating.setName(rs.getString("name"));
+
             return rating;
         }, Rating.class);
     }
 
     @Override
     public Optional<Rating> getById(Integer id) {
-        String sql = "SELECT rating_id, name FROM ratings WHERE rating_id = ?";
+        String sql = "SELECT * FROM ratings WHERE rating_id = ?";
+        Optional<Rating> result = findOne(sql, id);
 
-        return findOne(sql, id);
+        return result;
     }
 
     @Override
     public List<Rating> getAll() {
-        String sql = "SELECT rating_id, name FROM ratings";
+        String sql = "SELECT * FROM ratings";
 
         return findMany(sql);
     }
 }
-

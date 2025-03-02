@@ -24,12 +24,14 @@ public class RatingController {
     @GetMapping
     public ResponseEntity<List<RatingDto>> getAllRatings() {
         List<RatingDto> ratings = ratingService.getAllRatings();
+
         return ResponseEntity.ok(ratings);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<RatingDto> getRatingById(@PathVariable Integer id) {
         RatingDto ratingDto = ratingService.getRatingById(id);
+
         return ResponseEntity.ok(ratingDto);
     }
 }

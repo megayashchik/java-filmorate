@@ -13,7 +13,6 @@ import java.util.Set;
 
 @Data
 public class UserDto {
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer id;
 
     @NotBlank(message = "Email не может быть пустым")
