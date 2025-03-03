@@ -1,58 +1,86 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
-
+import java.util.List;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
-@RequiredArgsConstructor
 public class FilmController {
     private final FilmService filmService;
 
+    @Autowired
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
+
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Film create(@Valid @RequestBody Film film) {
-        log.info("Добавление фильма {}.", film.getName());
-        return filmService.createFilm(film);
+    public ResponseEntity<FilmDto> createFilm(@Valid @RequestBody FilmDto filmDto) {
+        log.info("Создание фильма: {}", filmDto);
+        FilmDto created = filmService.create(filmDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping
-    public Film update(@Valid @RequestBody Film newFilm) {
-        log.info("Обновление фильма {}.", newFilm.getName());
-        return filmService.updateFilm(newFilm);
+    public ResponseEntity<FilmDto> updateFilm(@Valid @RequestBody FilmDto filmDto) {
+        log.info("Получен запрос на обновление фильма: {}", filmDto);
+        Collection<FilmDto> allFilms = filmService.getAllFilms();
+        log.info("Все фильмы в базе данных: {}", allFilms);
+        FilmDto updated = filmService.update(filmDto);
+        log.info("Фильм обновлён: {}", updated);
+
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFilm(@PathVariable Integer id) {
+        filmService.deleteFilm(id);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<FilmDto> getFilmById(@PathVariable Integer id) {
+        FilmDto filmDto = filmService.getFilmById(id);
+
+        return ResponseEntity.ok(filmDto);
     }
 
     @GetMapping
-    public Collection<Film> findAllFilms() {
-        log.info("Список всех фильмов.");
-        return filmService.findAllFilms();
+    public ResponseEntity<Collection<FilmDto>> getAllFilms() {
+        Collection<FilmDto> films = filmService.getAllFilms();
+
+        return ResponseEntity.ok(films);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
-        log.info("Пользователь с id = {} поставил лайк к фильму id = {}.", userId, filmId);
-        filmService.addLike(filmId, userId);
+    public ResponseEntity<Void> addLike(@PathVariable Integer id, @PathVariable Integer userId) {
+        filmService.addLike(id, userId);
+
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public void deleteLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
-        log.info("Пользователь с id = {} удалил лайк к фильму id = {}.", userId, filmId);
-        filmService.deleteLike(filmId, userId);
+    public ResponseEntity<Void> deleteLike(@PathVariable Integer id, @PathVariable Integer userId) {
+        filmService.deleteLike(id, userId);
+
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/popular")
-    public Collection<Film> findMostLikedFilms(@RequestParam(value = "count", defaultValue = "10") Integer count) {
-        log.info("{} самых популярных фильмов.", count);
-        return filmService.findMostLikedFilms(count);
+    public ResponseEntity<List<FilmDto>> getMostLikedFilms(@RequestParam(defaultValue = "10") int count) {
+        List<FilmDto> films = filmService.getMostLikedFilms(count);
+
+        return ResponseEntity.ok(films);
     }
 }
-

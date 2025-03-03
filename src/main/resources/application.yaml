@@ -13,4 +13,3 @@ spring:
 
 logging.level:
   ru.practicum.filmorate: DEBUG
-

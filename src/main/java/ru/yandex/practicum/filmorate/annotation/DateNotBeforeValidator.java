@@ -5,7 +5,6 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import java.time.LocalDate;
 
-
 public class DateNotBeforeValidator implements ConstraintValidator<DateNotBefore, LocalDate> {
     private LocalDate notBeforeDate;
 
@@ -17,7 +16,7 @@ public class DateNotBeforeValidator implements ConstraintValidator<DateNotBefore
     @Override
     public boolean isValid(LocalDate localDate, ConstraintValidatorContext constraintValidatorContext) {
         if (localDate == null) {
-            return false;
+            return true;
         }
 
         return !localDate.isBefore(notBeforeDate);
