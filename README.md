@@ -9,6 +9,39 @@
 - [Примеры SQL-запросов для модели User](#примеры-sql-запросов-для-модели-user)
 - [Примеры SQL-запросов для модели Film](#примеры-sql-запросов-для-модели-film)
 
+## Технологии
+
+- Java 
+- Spring Boot 
+- Spring Data JDBC
+- H2 Database
+- REST
+- Maven
+- JUnit, AssertJ
+- Lombok
+
+## Запуск проекта
+
+1. Склонируйте репозиторий:
+
+git clone https://github.com/megayashchik/java-filmorate.git
+
+text
+
+2. Перейдите в папку проекта:
+
+cd java-filmorate
+
+text
+
+3. Запустите приложение:
+
+mvn spring-boot:run
+
+text
+
+4. Приложение будет доступно по адресу: `http://localhost:8080`
+
 ## ER-диаграмма
 
 ![Схема базы данных](assets/images/filmorate_diagram.png)
