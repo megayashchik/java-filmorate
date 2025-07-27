@@ -13,14 +13,14 @@
 
 ## Технологии
 
-- Java 
-- Spring Boot 
-- Spring Data JDBC
-- H2 Database
-- REST
-- Maven
-- JUnit, AssertJ
-- Lombok
+![Java](https://img.shields.io/badge/Java-blue?logo=java)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-brightgreen?logo=springboot)
+![Spring Data JDBC](https://img.shields.io/badge/Spring%20Data%20JDBC-brightgreen?logo=spring)
+![H2 Database](https://img.shields.io/badge/H2--Database-blue?logo=h2)
+![REST API](https://img.shields.io/badge/REST-API-orange)
+![Maven](https://img.shields.io/badge/Maven-red?logo=apachemaven)
+![JUnit](https://img.shields.io/badge/JUnit-green?logo=junit5)
+![Lombok](https://img.shields.io/badge/Lombok-red?logo=lombok)
 
 ## Запуск проекта
 
@@ -69,8 +69,9 @@
 - **likes:** лайки пользователей.
 
 
-## Примеры SQL-запросов для модели User
-
+<details>
+  <summary>▶️ <b>Примеры SQL-запросов для модели User</summary>
+  
 ### 1. Создание пользователя
 
 ```sql
@@ -139,9 +140,10 @@ JOIN friendships f1 ON u.user_id = f1.friend_id
 JOIN friendships f2 ON u.user_id = f2.friend_id
 WHERE f1.user_id = ? AND f2.user_id = ?;
 ```
+</details>
 
-
-## Примеры SQL-запросов для модели Film
+<details>
+<summary>▶️<b> Примеры SQL-запросов для модели Film</summary>
 
 ### 1. Создание фильма
 
@@ -214,3 +216,4 @@ GROUP BY f.film_id,
 ORDER BY like_count DESC
 LIMIT ?;
 ```
+</details>
